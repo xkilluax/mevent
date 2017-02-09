@@ -300,7 +300,6 @@ ConnStatus Request::ReadData() {
     ssize_t n;
     
     if (status_ != RequestStatus::HEADER_RECEIVING && status_ != RequestStatus::BODY_RECEIVING) {
-        //不支持keepalive/pipeline
         return ConnStatus::ERROR;
     }
     

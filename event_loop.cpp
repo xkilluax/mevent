@@ -73,7 +73,6 @@ void EventLoop::Loop(int listen_fd) {
     conn_pool_ = new ConnectionPool(max_worker_connections_);
 //    conn_pool_->Reserve(worker_connections_);
     
-    //创建事件fd
     evfd_ = Create();
     
     if (evfd_ < 0) {
@@ -89,7 +88,6 @@ void EventLoop::Loop(int listen_fd) {
         LOG_DEBUG(-1, NULL);
     }
     
-    //创建超时检查线程
     pthread_t tid;
     if (pthread_create(&tid, NULL, CheckConnectionTimeout, (void *)this) != 0) {
         LOG_DEBUG(-1, NULL);
@@ -100,7 +98,6 @@ void EventLoop::Loop(int listen_fd) {
     }
 
     
-    //创建工作线程
     for (int i = 0; i < worker_threads_; i++) {
         if (pthread_create(&tid, NULL, WorkerThread, (void *)this) != 0) {
             LOG_DEBUG(-1, NULL);
@@ -111,7 +108,6 @@ void EventLoop::Loop(int listen_fd) {
         }
     }
     
-    //创建工作线程
     for (int i = 0; i < worker_threads_; i++) {
         if (pthread_create(&tid, NULL, WebSocketWorkerThread, (void *)this) != 0) {
             LOG_DEBUG(-1, NULL);
@@ -122,7 +118,6 @@ void EventLoop::Loop(int listen_fd) {
         }
     }
     
-    //事件循环
     int nfds;
     Connection *conn;
     

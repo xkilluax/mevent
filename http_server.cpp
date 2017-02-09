@@ -40,7 +40,6 @@ void *HTTPServer::EventLoopThread(void *arg) {
 }
 
 void HTTPServer::ListenAndServe(const std::string &ip, int port) {
-    //非多线程安全，所以创建多线程之前调用一次
     curl_global_init(CURL_GLOBAL_ALL);
     
     signal(SIGPIPE, SIG_IGN);
@@ -75,7 +74,7 @@ void HTTPServer::ListenAndServe(const std::string &ip, int port) {
     }
     
     rlimit_nofile_ = worker_threads_ * max_worker_connections_;
-    //设置打开文件数限制
+
     if (rlimit_nofile_ > 0) {
         struct rlimit limit;
         limit.rlim_cur = rlimit_nofile_;

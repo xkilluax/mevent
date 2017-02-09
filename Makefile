@@ -71,6 +71,6 @@ event_loop_base.o : event_loop_base.cpp event_loop_base.h
 clean :
 	rm -f *.o
 	rm -f examples/*.o
-	rm -f examples/form_action
 	rm -f examples/chat_room
+	rm -f examples/form_action
 	rm -f examples/hello_world

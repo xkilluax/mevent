@@ -18,7 +18,6 @@ bool HTTPClient::Request(const std::string &host) {
     
     curl_easy_setopt(curl_, CURLOPT_TIMEOUT, REQUEST_TIMEOUT);
     
-    //设置为了多线程安全，DNS解析可能会阻塞...
     curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
     
     curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
