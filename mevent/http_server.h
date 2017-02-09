@@ -1,0 +1,50 @@
+#ifndef _HTTP_SERVER_H
+#define _HTTP_SERVER_H
+
+#include "event_loop.h"
+
+namespace mevent {
+
+class HTTPServer {
+public:
+    HTTPServer();
+    ~HTTPServer() {};
+ 
+    void ListenAndServe(const std::string &ip, int port);
+    
+    void SetHandler(const std::string &name, HTTPHandleFunc func);
+    
+    //Settings
+    void SetRlimitNofile(int num);
+    void SetUser(const std::string &user);
+    void SetWorkerThreads(int num);
+    void SetMaxWorkerConnections(int num);
+    void SetIdleTimeout(int secs);
+    
+    //Default 8192 bytes
+    void SetMaxPostSize(size_t size);
+    
+    //Default 2048 bytes
+    void SetMaxHeaderSize(size_t size);
+    
+    void Daemonize(const std::string &working_dir);
+    
+private:
+    static void *EventLoopThread(void *arg);
+    
+    int          listen_fd_;
+    
+    HTTPHandler  handler_;
+    
+    std::string  user_;
+    int          rlimit_nofile_;
+    int          worker_threads_;
+    int          max_worker_connections_;
+    int          idle_timeout_;
+    size_t       max_post_size_;
+    size_t       max_header_size_;
+};
+
+}//namespace mevent
+
+#endif
