@@ -1,12 +1,8 @@
 #include <stdio.h>
 
 #include "../http_server.h"
-#include "../util.h"
-#include "../http_client.h"
-#include "../lock_guard.h"
 
 using namespace mevent;
-using namespace mevent::util;
 
 const char *index_html =
 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\n"
