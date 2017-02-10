@@ -17,6 +17,13 @@ apt-get install libssl-dev libcurl4-gnutls-dev
 ```
 yum install openssl-devel libcurl-devel
 ```
+
+#### OSX users
+```
+brew update
+brew install openssl curl
+```
+
 #### Example
 
 ```cpp
