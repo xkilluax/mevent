@@ -14,9 +14,6 @@ install:
 addons:
   apt:
     packages:
-      - gcc-4.8
-      - g++-4.8
-      - clang
       - libcurl-dev
       - libssl-dev
 
