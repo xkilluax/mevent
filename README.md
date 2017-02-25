@@ -65,4 +65,6 @@ int main() {
 
 More examples can be found in examples directory.
 
-## Integration
+## Author
+
+Luyao Teng
