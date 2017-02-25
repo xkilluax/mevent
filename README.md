@@ -4,8 +4,15 @@
 
 Mevent is a tiny HTTP/WebSocket server library, can be used on Linux and OSX.
 
+## Features
+
+- TLS (https/wss) support
+- `ping`/`pong` support
+- Asynchronous and non-blocking, I/O Multiplexing using epoll and kqueue
+- Supports Linux, OSX
+- Thread-safe
+
 ## Integration
---------
 
 You should have libssl, libcurl installed into your system, and your compiler should support C++11. 
 
@@ -57,3 +64,5 @@ int main() {
 ```
 
 More examples can be found in examples directory.
+
+## Integration
