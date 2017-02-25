@@ -5,7 +5,7 @@ else
 CXXFLAGS  = -O2 -Wall -Wextra -std=c++0x -I/usr/local/opt/openssl/include -I/usr/local/opt/curl/include
 endif
 LDFLAGS   = -L/usr/local/opt/openssl/lib -L/usr/local/opt/curl/lib
-LIBS      = -lpthread -lcrypto -lcurl
+LIBS      = -lpthread -lssl -lcrypto -lcurl
 
 OBJS = http_server.o \
 	   event_loop.o \
@@ -21,7 +21,10 @@ OBJS = http_server.o \
 	   http_client.o \
 	   event_loop_base.o 
 
-all : examples/chat_room examples/hello_world examples/form_action
+all : examples/chat_room \
+	  examples/hello_world \
+	  examples/form_action \
+	  examples/tls_server
 
 examples/chat_room: $(OBJS) examples/chat_room.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LIBS)
@@ -37,6 +40,12 @@ examples/form_action: $(OBJS) examples/form_action.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LIBS)
 examples/form_action.o : examples/form_action.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+examples/tls_server: $(OBJS) examples/tls_server.o
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LIBS)
+examples/form_action.o : examples/tls_server.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 
 
 http_server.o : http_server.cpp http_server.h
@@ -74,3 +83,4 @@ clean :
 	rm -f examples/chat_room
 	rm -f examples/form_action
 	rm -f examples/hello_world
+	rm -f examples/tls_server
