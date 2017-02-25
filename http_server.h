@@ -3,6 +3,9 @@
 
 #include "event_loop.h"
 
+#include <pthread.h>
+#include <openssl/ssl.h>
+
 namespace mevent {
 
 class HTTPServer {
@@ -11,6 +14,8 @@ public:
     ~HTTPServer() {};
  
     void ListenAndServe(const std::string &ip, int port);
+    
+    void ListenAndServeTLS(const std::string &ip, int port, const std::string &cert_file, const std::string &key_file);
     
     void SetHandler(const std::string &name, HTTPHandleFunc func);
     
@@ -32,6 +37,9 @@ public:
 private:
     static void *EventLoopThread(void *arg);
     
+    static void SSLLockingCb(int mode, int type, const char* file, int line);
+    static unsigned long SSLIdCb();
+    
     int          listen_fd_;
     
     HTTPHandler  handler_;
@@ -43,6 +51,9 @@ private:
     int          idle_timeout_;
     size_t       max_post_size_;
     size_t       max_header_size_;
+    
+    SSL_CTX         *ssl_ctx_;
+    static pthread_mutex_t *ssl_mutex_;
 };
 
 }//namespace mevent

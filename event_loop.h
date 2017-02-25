@@ -5,6 +5,8 @@
 #include "event_loop_base.h"
 #include "ternary_search_tree.h"
 
+#include <openssl/ssl.h>
+
 #include <string>
 #include <functional>
 #include <queue>
@@ -26,12 +28,16 @@ private:
 
 class EventLoop : public EventLoopBase {
 public:
-    EventLoop(HTTPHandler *handler);
+    EventLoop();
     virtual ~EventLoop();
     
     void ResetConnection(Connection *conn);
     
     void Loop(int listen_fd);
+    
+    void SetHandler(HTTPHandler *handler);
+    
+    void SetSslCtx(SSL_CTX *ssl_ctx);
     
     void SetMaxWorkerConnections(int num);
     void SetIdleTimeout(int secs);
@@ -62,6 +68,8 @@ private:
     int                 evfd_;
     int                 listen_fd_;
     Connection          listen_c_;
+    
+    SSL_CTX            *ssl_ctx_;
     
     pthread_mutex_t     task_cond_mtx_;
     pthread_cond_t      task_cond_;

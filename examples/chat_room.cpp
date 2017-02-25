@@ -44,7 +44,7 @@ const char *index_html =
 "        <input type=\"button\" value=\"Send\" id=\"sendButton\" />\n"
 "        <input type=\"button\" value=\"Clear\" id=\"clearButton\" />\n"
 "    </p>\n"
-"<script src=\"http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js\" type=\"text/javascript\" language=\"javascript\" charset=\"utf-8\"></script>\n"
+"<script src=\"https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js\" type=\"text/javascript\" language=\"javascript\" charset=\"utf-8\"></script>\n"
 "<script type=\"text/javascript\">\n"
 "var ws\n"
 "var room = \"default\"\n"
@@ -56,7 +56,10 @@ const char *index_html =
 "        return\n"
 "    }\n"
 "\n"
-"    ws = new WebSocket(\"ws://\" + window.location.hostname + \":\" + window.location.port + \"/ws?room=\" + room)\n"
+"    url = \"ws://\" + window.location.hostname + \":\" + window.location.port + \"/ws?room=\" + room\n"
+"    if (location.protocol == \"https:\") \n"
+"        url = \"wss://\" + window.location.hostname + \":\" + window.location.port + \"/ws?room=\" + room\n"
+"    ws = new WebSocket(url)\n"
 "    ws.onopen = function(event) {\n"
 "        $(\".offline\").hide()\n"
 "        $(\".online\").show()\n"
@@ -167,6 +170,7 @@ public:
     }
     
     void Ping(WebSocket *ws, const std::string &msg) {
+        (void)msg;//avoid unused parameter warning
         ws->SendPong("");
     }
     
@@ -281,6 +285,9 @@ int main() {
     server->SetMaxWorkerConnections(8192);
     
     server->ListenAndServe("0.0.0.0", 80);
+    
+    //HTTPS WSS
+//    server->ListenAndServeTLS("0.0.0.0", 443, "host.crt", "host.key");
     
     return 0;
 }

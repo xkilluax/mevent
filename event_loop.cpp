@@ -43,28 +43,39 @@ HTTPHandleFunc HTTPHandler::GetHandleFunc(const std::string &path) {
 
 //////////////////
 
-EventLoop::EventLoop(HTTPHandler *handler) : handler_(handler) {
+EventLoop::EventLoop() {
     worker_threads_ = 1;
     max_worker_connections_ = 1024;
     idle_timeout_ = 30;
     max_post_size_ = 8192;
     max_header_size_ = 2048;
     
+    handler_ = nullptr;
+    ssl_ctx_ = NULL;
+    
     if (pthread_cond_init(&task_cond_, NULL) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     if (pthread_mutex_init(&task_cond_mtx_, NULL) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     if (pthread_cond_init(&ws_task_cond_, NULL) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     if (pthread_mutex_init(&ws_task_cond_mtx_, NULL) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
+}
+    
+void EventLoop::SetHandler(mevent::HTTPHandler *handler) {
+    handler_ = handler;
+}
+    
+void EventLoop::SetSslCtx(SSL_CTX *ssl_ctx) {
+    ssl_ctx_ = ssl_ctx;
 }
 
 void EventLoop::Loop(int listen_fd) {
@@ -76,45 +87,45 @@ void EventLoop::Loop(int listen_fd) {
     evfd_ = Create();
     
     if (evfd_ < 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     if (set_nonblock(listen_fd) < 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     listen_c_.fd_ = listen_fd_;
     if (Add(evfd_, listen_fd, MEVENT_IN, &listen_c_) == -1) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     pthread_t tid;
     if (pthread_create(&tid, NULL, CheckConnectionTimeout, (void *)this) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     if (pthread_detach(tid) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
 
     
     for (int i = 0; i < worker_threads_; i++) {
         if (pthread_create(&tid, NULL, WorkerThread, (void *)this) != 0) {
-            LOG_DEBUG(-1, NULL);
+            MEVENT_LOG_DEBUG_EXIT(NULL);
         }
         
         if (pthread_detach(tid) != 0) {
-            LOG_DEBUG(-1, NULL);
+            MEVENT_LOG_DEBUG_EXIT(NULL);
         }
     }
     
     for (int i = 0; i < worker_threads_; i++) {
         if (pthread_create(&tid, NULL, WebSocketWorkerThread, (void *)this) != 0) {
-            LOG_DEBUG(-1, NULL);
+            MEVENT_LOG_DEBUG_EXIT(NULL);
         }
         
         if (pthread_detach(tid) != 0) {
-            LOG_DEBUG(-1, NULL);
+            MEVENT_LOG_DEBUG_EXIT(NULL);
         }
     }
     
@@ -153,7 +164,7 @@ void EventLoop::Accept() {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 break;
             } else {
-                LOG_DEBUG(-1, NULL);
+                MEVENT_LOG_DEBUG_EXIT(NULL);
                 return;
             }
         }
@@ -161,7 +172,7 @@ void EventLoop::Accept() {
         Connection *conn = conn_pool_->FreeListPop();
         
         if (!conn) {
-            LOG_DEBUG(0, "worker connections reach max limit");
+            MEVENT_LOG_DEBUG("worker connections reach max limit");
             close(clifd);
             return;
         }
@@ -171,25 +182,43 @@ void EventLoop::Accept() {
         
         conn->active_time_ = time(NULL);
         conn->fd_ = clifd;
+        conn->elp_ = this;
         
         Request *req = conn->Req();
         req->addr_ = cliaddr.sin_addr;
         
-        if (set_nonblock(clifd) < 0) {
-            LOG_DEBUG(0, NULL);
-            conn_pool_->FreeListPush(conn);
-            continue;
-        }
+        bool status = true;
         
-        int enable = 1;
-        if (setsockopt(clifd, IPPROTO_TCP, TCP_NODELAY, (void*)&enable, sizeof(enable)) < 0) {
-            LOG_DEBUG(0, NULL);
-            conn_pool_->FreeListPush(conn);
-            continue;
-        }
-        
-        if (Add(evfd_, clifd, MEVENT_IN, conn) == -1) {
-            LOG_DEBUG(0, NULL);
+        do {
+            if (set_nonblock(clifd) < 0) {
+                MEVENT_LOG_DEBUG(NULL);
+                status = false;
+                break;
+            }
+            
+            int enable = 1;
+            if (setsockopt(clifd, IPPROTO_TCP, TCP_NODELAY, (void*)&enable, sizeof(enable)) < 0) {
+                MEVENT_LOG_DEBUG(NULL);
+                status = false;
+                break;
+            }
+            
+            if (Add(evfd_, clifd, MEVENT_IN, conn) == -1) {
+                MEVENT_LOG_DEBUG(NULL);
+                status = false;
+                break;
+            }
+            
+            if (ssl_ctx_) {
+                if (!conn->CreateSSL(ssl_ctx_)) {
+                    status = false;
+                    break;
+                }
+            }
+        } while (0);
+
+        if (!status) {
+            conn->Reset();
             conn_pool_->FreeListPush(conn);
             continue;
         }
@@ -233,6 +262,11 @@ void *EventLoop::CheckConnectionTimeout(void *arg) {
 
                 if (conn->active_time_ > 0) {
                     if ((now - conn->active_time_) >= elp->idle_timeout_) {
+                        if (conn->Req()->status_ == RequestStatus::UPGRADE) {
+                            MEVENT_LOG_DEBUG("connection(websocket) timeout");
+                        } else {
+                            MEVENT_LOG_DEBUG("connection timeout");
+                        }
                         elp->ResetConnection(conn);
                     } else {
                         break;
@@ -283,7 +317,8 @@ void EventLoop::SetMaxHeaderSize(size_t size) {
 }
 
 void EventLoop::OnAccept(Connection *conn) {
-    conn->elp_ = this;
+    (void)conn;//avoid unused parameter warning
+//    conn->elp_ = this;
 }
 
 void EventLoop::OnRead(Connection *conn) {

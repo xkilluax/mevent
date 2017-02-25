@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <openssl/ssl.h>
 
 #include <vector>
 #include <queue>
@@ -67,6 +68,8 @@ private:
     
     void ShutdownSocket(int how);
     
+    bool CreateSSL(SSL_CTX *ssl_ctx);
+    
     int               fd_;
     
     pthread_mutex_t   mtx_;
@@ -87,6 +90,8 @@ private:
     time_t            active_time_;
     
     bool              ev_writable_;
+    
+    SSL              *ssl_;
 };
 
 }//namespace mevent
