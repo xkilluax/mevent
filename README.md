@@ -1,7 +1,8 @@
 # mevent
-Mevent is a tiny HTTP/WebSocket server library, can be used on Linux and OSX.
-
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/looyao/mevent/master/LICENSE.md)
 [![Build Status](https://travis-ci.org/looyao/mevent.svg?branch=master)](https://travis-ci.org/looyao/mevent)
+
+Mevent is a tiny HTTP/WebSocket server library, can be used on Linux and OSX.
 
 ## Integration
 --------
