@@ -13,11 +13,11 @@ ConnectionPool::ConnectionPool(int max_conn)
       max_conn_(max_conn) {
     
     if (pthread_mutex_init(&free_list_mtx_, NULL) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
     
     if (pthread_mutex_init(&active_list_mtx_, NULL) != 0) {
-        LOG_DEBUG(-1, NULL);
+        MEVENT_LOG_DEBUG_EXIT(NULL);
     }
 }
 
