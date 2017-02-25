@@ -1,5 +1,6 @@
 #include "util.h"
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -10,9 +11,11 @@
 #include <unistd.h>
 #include <sys/signal.h>
 
-#include <vector>
+#ifdef __APPLE__
+#include <libproc.h>
+#endif
 
-using std::string;
+#include <vector>
 
 namespace mevent {
 namespace util {
@@ -21,18 +24,18 @@ static const unsigned char hexchars[] = "0123456789ABCDEF";
     
 pthread_mutex_t log_mtx = PTHREAD_MUTEX_INITIALIZER;
     
-string GetGMTimeStr() {
+std::string GetGMTimeStr() {
     char buf[128];
     time_t t = time(NULL);
     struct tm stm;
     gmtime_r(&t, &stm);
     strftime(buf, 128, "%a, %d %b %Y %H:%M:%S GMT", &stm);
-    return string(buf);
+    return std::string(buf);
 }
     
-void LogDebug(const char *file, int line, int opt, const char *msg) {
+void LogDebug(const char *file, int line, int opt, const char *fmt, ...) {
     if (pthread_mutex_lock(&log_mtx) != 0) {
-        fprintf(stderr, "DEBUG file:%s line:%d, err: %s\n", __FILE__, __LINE__, strerror(errno));
+        fprintf(stderr, "DEBUG file:%s line:%d %s\n", __FILE__, __LINE__, strerror(errno));
     }
     
     do {
@@ -42,20 +45,27 @@ void LogDebug(const char *file, int line, int opt, const char *msg) {
         
         char buf[32];
         if (strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t) == 0) {
-            fprintf(stderr, "DEBUG file:%s line:%d, err: %s\n", file, __LINE__, strerror(errno));
+            fprintf(stderr, "DEBUG file:%s line:%d %s\n", file, __LINE__, strerror(errno));
             break;
         }
         
-        if (msg) {
-            fprintf(stderr, "%s DEBUG file:%s line:%d, msg: %s\n", buf, file, line, msg);
+        if (fmt) {
+            fprintf(stderr, "%s DEBUG file:%s line:%d ", buf, file, line);
+            
+            va_list argptr;
+            va_start(argptr, fmt);
+            vfprintf(stderr, fmt, argptr);
+            va_end(argptr);
+            
+            fprintf(stderr, "\n");
         } else {
-            fprintf(stderr, "%s DEBUG file:%s line:%d, err: %s\n", buf, file, line, strerror(errno));
+            fprintf(stderr, "%s DEBUG file:%s line:%d %s\n", buf, file, line, strerror(errno));
         }
         fflush(stderr);
     } while (0);
         
     if (pthread_mutex_unlock(&log_mtx) != 0) {
-        fprintf(stderr, "DEBUG file:%s line:%d, err: %s\n", __FILE__, __LINE__, strerror(errno));
+        fprintf(stderr, "DEBUG file:%s line:%d %s\n", __FILE__, __LINE__, strerror(errno));
     }
     
     if (opt) {
@@ -297,6 +307,29 @@ std::string URLEncode(const std::string &str) {
     }
     
     return dest;
+}
+    
+std::string ExecutablePath() {
+    char buf[1024] = {0};
+#ifdef __linux__
+    readlink("/proc/self/exe", buf, sizeof(buf));
+#endif
+    
+#ifdef __FreeBSD__
+    readlink("/proc/curproc/file", buf, sizeof(buf));
+#endif
+    
+#ifdef __APPLE__
+    proc_pidpath(getpid(), buf, sizeof(buf));
+#endif
+    
+    char *p = strrchr(buf, '/');
+    if (NULL == p) {
+        return "";
+    }
+    *(p + 1) = '\0';
+    
+    return std::string(buf);
 }
     
 }//namespace util
