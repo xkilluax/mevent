@@ -269,7 +269,7 @@ void HTTPServer::SSLLockingCb(int mode, int type, const char *file, int line) {
 }
     
 unsigned long HTTPServer::SSLIdCb() {
-    return reinterpret_cast<unsigned long>(pthread_self());
+    return (unsigned long)pthread_self();
 }
     
 }//namespace mevent
