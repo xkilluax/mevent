@@ -305,7 +305,6 @@ ConnStatus Request::ReadData() {
     
     if (status_ == RequestStatus::HEADER_RECEIVING) {
         n = conn_->Readn(buf, READ_BUFFER_SIZE);
-        
         if (n > 0) {
             rbuf_len_ += n;
             if (rbuf_len_ > conn_->elp_->max_header_size_) {
@@ -322,7 +321,7 @@ ConnStatus Request::ReadData() {
                 error_code_ = 400;
                 return ConnStatus::ERROR;
             }
-        } else {
+        } else if (n < 0) {
             return ConnStatus::CLOSE;
         }
     }
@@ -344,7 +343,7 @@ ConnStatus Request::ReadData() {
                 if (rbuf_len_ - header_len_ >= content_length_) {
                     status_ = RequestStatus::BODY_RECEIVED;
                 }
-            } else {
+            } else if (n < 0) {
                 return ConnStatus::CLOSE;
             }
         }
