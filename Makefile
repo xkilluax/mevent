@@ -43,7 +43,7 @@ examples/form_action.o : examples/form_action.cpp
 
 examples/tls_server: $(OBJS) examples/tls_server.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LIBS)
-examples/form_action.o : examples/tls_server.cpp
+examples/tls_server.o : examples/tls_server.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 
