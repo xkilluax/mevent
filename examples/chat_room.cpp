@@ -126,7 +126,7 @@ public:
         std::vector<uint8_t> data;
     };
     
-    ChatRoom () {
+    ChatRoom() {
         pthread_mutex_init(&task_mtx_, NULL);
         pthread_cond_init(&task_cond_, NULL);
         
