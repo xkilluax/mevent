@@ -22,7 +22,6 @@ Response::Response(Connection *conn) : conn_(conn) {
     
 void Response::Reset() {
     header_map_.clear();
-    std::map<std::string, std::string>().swap(header_map_);
     
     finish_ = false;
 }
@@ -49,32 +48,10 @@ void Response::WriteErrorMessage(int code) {
 }
     
 void Response::WriteData(const std::vector<uint8_t> &data) {
-    std::string s = HTTP_200_HEAD;
+    std::string s;
     
-    auto it = header_map_.find("Server");
-    if (it != header_map_.end()) {
-        s += "Server: " + it->second + CRLF;
-    } else {
-        s += "Server: " SERVER CRLF;
-    }
-    
-    it = header_map_.find("Date");
-    if (it != header_map_.end()) {
-        s += "Date: " + it->second + CRLF;
-    } else {
-        s += "Date: " + util::GetGMTimeStr() + CRLF;
-    }
-    
-    it = header_map_.find("Content-Type");
-    if (it != header_map_.end()) {
-        s += "Content-Type: " + it->second + CRLF;
-    } else {
-        s += "Content-Type: application/octet-stream" CRLF;
-    }
-    
-    
-    s += "Content-Length: " + std::to_string(data.size()) + CRLF;
-    s += "Connection: close" CRLF;
+    header_map_["Content-Length"] = std::vector<std::string>{std::to_string(data.size())};
+    s += MakeHeader();
     s += CRLF;
     
     //body
@@ -86,31 +63,10 @@ void Response::WriteData(const std::vector<uint8_t> &data) {
 }
     
 void Response::WriteString(const std::string &str) {
-    std::string s = HTTP_200_HEAD;
+    std::string s;
     
-    auto it = header_map_.find("Server");
-    if (it != header_map_.end()) {
-        s += "Server: " + it->second + CRLF;
-    } else {
-        s += "Server: " SERVER CRLF;
-    }
-    
-    it = header_map_.find("Date");
-    if (it != header_map_.end()) {
-        s += "Date: " + it->second + CRLF;
-    } else {
-        s += "Date: " + util::GetGMTimeStr() + CRLF;
-    }
-    
-    it = header_map_.find("Content-Type");
-    if (it != header_map_.end()) {
-        s += "Content-Type: " + it->second + CRLF;
-    } else {
-        s += "Content-Type: application/octet-stream" CRLF;
-    }
-    
-    s += "Content-Length: " + std::to_string(str.length()) + CRLF;
-    s += "Connection: close" CRLF;
+    header_map_["Content-Length"] = std::vector<std::string>{std::to_string(str.length())};
+    s += MakeHeader();
     s += CRLF;
     
     //body
@@ -130,11 +86,48 @@ void Response::SetHeader(const std::string &field, const std::string &value) {
         return;
     }
     
-    header_map_[field] = value;
+    header_map_[field] = std::vector<std::string>{value};
 }
     
-void Response::Finish() {
-    finish_ = true;
+void Response::AddHeader(const std::string &field, const std::string &value ) {
+    if (field.empty() || value.empty()) {
+        return;
+    }
+    
+    header_map_[field].push_back(value);
+}
+    
+void Response::DelHeader(const std::string &field) {
+    header_map_.erase(field);
+}
+
+std::string Response::MakeHeader() {
+    std::string str = HTTP_200_HEAD;
+    
+    auto it = header_map_.find("Server");
+    if (it == header_map_.end()) {
+        str += "Server: " SERVER CRLF;
+    }
+    
+    it = header_map_.find("Date");
+    if (it == header_map_.end()) {
+        str += "Date: " + util::GetGMTimeStr() + CRLF;
+    }
+    
+    it = header_map_.find("Content-Type");
+    if (it == header_map_.end()) {
+        str += "Content-Type: application/octet-stream" CRLF;
+    }
+    
+    header_map_["Connection"] = std::vector<std::string>{"close"};
+    
+    for (it = header_map_.begin(); it != header_map_.end(); it++) {
+        for (auto vit = it->second.begin(); vit != it->second.end(); vit++) {
+            str += it->first + ": " + *vit + CRLF;
+        }
+    }
+    
+    return str;
 }
 
 }//namespace mevent

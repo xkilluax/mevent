@@ -27,13 +27,16 @@ public:
     void WriteRawData(const std::vector<uint8_t> &data);
     
     void SetHeader(const std::string &field, const std::string &value);
+    void AddHeader(const std::string &field, const std::string &value);
+    void DelHeader(const std::string &field);
     
-    void Finish();
 private:
     friend class Connection;
     
+    std::string MakeHeader();
+    
     Connection *conn_;
-    std::map<std::string, std::string> header_map_;
+    std::map<std::string, std::vector<std::string>> header_map_;
     
     bool finish_;
 };
