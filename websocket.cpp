@@ -117,7 +117,7 @@ bool WebSocket::Upgrade()
         return false;
     }
     
-    std::string sec_websocket_key =conn_->Req()->sec_websocket_key_;
+    std::string sec_websocket_key = conn_->Req()->sec_websocket_key_;
 
     conn_->Req()->Reset();
     conn_->Resp()->Reset();
