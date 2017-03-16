@@ -213,7 +213,7 @@ std::string Request::QueryString() {
     return query_string_;
 }
     
-RequestMethod Request::method() {
+RequestMethod Request::Method() {
     return method_;
 }
     

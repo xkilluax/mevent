@@ -83,7 +83,7 @@ public:
     std::string Path();
     std::string QueryString();
     
-    RequestMethod method();
+    RequestMethod Method();
     
 private:
     friend class Connection;
