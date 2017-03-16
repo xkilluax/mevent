@@ -23,6 +23,9 @@ Response::Response(Connection *conn) : conn_(conn) {
 void Response::Reset() {
     header_map_.clear();
     
+    wbuf_.clear();
+    wbuf_.shrink_to_fit();
+    
     finish_ = false;
 }
     
@@ -45,40 +48,31 @@ void Response::WriteErrorMessage(int code) {
     }
     
     conn_->WriteString(str);
+    
+    wbuf_.clear();
+    
+    finish_ = true;
 }
     
 void Response::WriteData(const std::vector<uint8_t> &data) {
-    std::string s;
-    
-    header_map_["Content-Length"] = std::vector<std::string>{std::to_string(data.size())};
-    s += MakeHeader();
-    s += CRLF;
-    
-    //body
-    s.insert(s.end(), data.begin(), data.end());
-    
-    conn_->WriteString(s);
-    
-    finish_ = true;
+    wbuf_.insert(wbuf_.end(), data.begin(), data.end());
 }
     
 void Response::WriteString(const std::string &str) {
-    std::string s;
-    
-    header_map_["Content-Length"] = std::vector<std::string>{std::to_string(str.length())};
-    s += MakeHeader();
-    s += CRLF;
-    
-    //body
-    s += str;
-    
-    conn_->WriteString(s);
-    
-    finish_ = true;
+    wbuf_.insert(wbuf_.end(), str.begin(), str.end());
 }
     
-void Response::WriteRawData(const std::vector<uint8_t> &data) {
-    conn_->WriteData(data);
+void Response::Flush() {
+    if (wbuf_.empty()) {
+        return;
+    }
+    
+    header_map_["Content-Length"] = std::vector<std::string>{std::to_string(wbuf_.length())};
+    
+    conn_->WriteString(MakeHeader());
+    conn_->WriteString(wbuf_);
+    
+    finish_ = true;
 }
     
 void Response::SetHeader(const std::string &field, const std::string &value) {
@@ -126,6 +120,8 @@ std::string Response::MakeHeader() {
             str += it->first + ": " + *vit + CRLF;
         }
     }
+    
+    str += CRLF;
     
     return str;
 }

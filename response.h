@@ -24,7 +24,6 @@ public:
     
     void WriteString(const std::string &str);
     void WriteData(const std::vector<uint8_t> &data);
-    void WriteRawData(const std::vector<uint8_t> &data);
     
     void SetHeader(const std::string &field, const std::string &value);
     void AddHeader(const std::string &field, const std::string &value);
@@ -32,11 +31,15 @@ public:
     
 private:
     friend class Connection;
+    friend class EventLoop;
     
     std::string MakeHeader();
+    void Flush();
     
     Connection *conn_;
     std::map<std::string, std::vector<std::string>> header_map_;
+    
+    std::string wbuf_;
     
     bool finish_;
 };

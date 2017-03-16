@@ -375,12 +375,17 @@ void *EventLoop::WorkerThread(void *arg) {
             }
             
             Request *req = conn->Req();
+            Response *resp = conn->Resp();
             
             HTTPHandleFunc func;
             if ((func = elp->handler_->GetHandleFunc(req->path_))) {
                 func(conn);
             } else {
-                conn->Resp()->WriteErrorMessage(404);
+                resp->WriteErrorMessage(404);
+            }
+            
+            if (req->status_ != RequestStatus::UPGRADE) {
+                resp->Flush();
             }
             
             ConnStatus status = conn->Flush();
