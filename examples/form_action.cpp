@@ -39,13 +39,13 @@ public:
         Response *resp = conn->Resp();
         conn->Resp()->SetHeader("Content-Type", "text/plain");
         std::string str;
-        if (req->method() == RequestMethod::GET) {
+        if (req->Method() == RequestMethod::GET) {
             req->ParseQueryString();
             str = "GET:";
             str += req->QueryString() + "\n";
             str += "First name:" + req->QueryStringValue("fname") + "\n";
             str += "Last name:" + req->QueryStringValue("lname") + "\n";
-        } else if (req->method() == RequestMethod::POST) {
+        } else if (req->Method() == RequestMethod::POST) {
             req->ParsePostForm();
             str = "POST:";
             str += req->Body() + "\n";
