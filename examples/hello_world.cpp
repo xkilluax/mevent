@@ -8,7 +8,8 @@ class HelloWorld {
 public:
     void Index(Connection *conn) {
         conn->Resp()->SetHeader("Content-Type", "text/html");
-        conn->Resp()->WriteString("hello world!");
+        conn->Resp()->WriteString("hello");
+        conn->Resp()->WriteString(" world!");
     }
 };
 
