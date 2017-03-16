@@ -397,6 +397,7 @@ HTTPParserStatus Request::Parse() {
             } else if (c == 'p') {
                 method_ = RequestMethod::PATCH;
             } else {
+                parse_status_ = RequestParseStatus::S_START;
                 status = HTTPParserStatus::ERROR;
                 break;
             }
@@ -420,6 +421,9 @@ HTTPParserStatus Request::Parse() {
                 method = METHOD_TRACE;
             } else if (method_ == RequestMethod::PATCH) {
                 method = METHOD_PATCH;
+            } else {
+                status = HTTPParserStatus::ERROR;
+                break;
             }
             
             size_t len = strlen(method);
