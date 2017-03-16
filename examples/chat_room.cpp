@@ -169,6 +169,26 @@ public:
         }
     }
     
+    void Publish(Connection *conn) {
+        Request *req = conn->Req();
+        if (req->Method() != RequestMethod::POST) {
+            return;
+        }
+        
+        req->ParsePostForm();
+        
+        std::string nick = req->PostFormValue("nick");
+        std::string msg = req->PostFormValue("msg");
+        std::string room = req->PostFormValue("room");
+        
+        std::string str = nick + ":" + msg;
+        
+        TaskPush(room, str);
+        
+        Response *resp = conn->Resp();
+        resp->WriteString("ok");
+    }
+    
     void Ping(WebSocket *ws, const std::string &msg) {
         (void)msg;//avoid unused parameter warning
         ws->SendPong("");
@@ -228,6 +248,21 @@ public:
         pthread_cond_signal(&task_cond_);
     }
     
+    void TaskPush(const std::string &channel_name, const std::string &msg) {
+        LockGuard lock_guard(task_mtx_);
+        
+        std::vector<uint8_t> data;
+        WebSocket::MakeFrame(data, msg, WebSocketOpcodeType::TEXT_FRAME);
+        
+        std::shared_ptr<Task> task_ptr = std::make_shared<Task>();
+        
+        task_ptr->data = data;
+        task_ptr->channel_name = channel_name;
+        task_que_.push(task_ptr);
+        
+        pthread_cond_signal(&task_cond_);
+    }
+    
     static void *TaskThread(void *arg) {
         ChatRoom *chat = static_cast<ChatRoom *>(arg);
         while (true) {
@@ -277,8 +312,11 @@ int main() {
     ChatRoom chat;
     
     HTTPServer *server = new HTTPServer();
-    server->SetHandler("/", std::bind(&::ChatRoom::Index, &chat, std::placeholders::_1));
-    server->SetHandler("/ws", std::bind(&::ChatRoom::Subscribe, &chat, std::placeholders::_1));
+    server->SetHandler("/", std::bind(&ChatRoom::Index, &chat, std::placeholders::_1));
+    server->SetHandler("/ws", std::bind(&ChatRoom::Subscribe, &chat, std::placeholders::_1));
+    
+    //curl -XPOST http://localhost/pub -d 'nick=looyao&msg=hello&room=10086'
+    server->SetHandler("/pub", std::bind(&ChatRoom::Publish, &chat, std::placeholders::_1));
     
     server->SetWorkerThreads(4);
     server->SetIdleTimeout(60);
