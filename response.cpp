@@ -63,6 +63,8 @@ void Response::WriteString(const std::string &str) {
 }
     
 void Response::Flush() {
+    finish_ = true;
+    
     if (wbuf_.empty()) {
         return;
     }
@@ -71,8 +73,6 @@ void Response::Flush() {
     
     conn_->WriteString(MakeHeader());
     conn_->WriteString(wbuf_);
-    
-    finish_ = true;
 }
     
 void Response::SetHeader(const std::string &field, const std::string &value) {
