@@ -395,7 +395,7 @@ void *EventLoop::WorkerThread(void *arg) {
                     elp->Modify(elp->evfd_, conn->fd_, MEVENT_IN | MEVENT_OUT, conn);
                     conn->ev_writable_ = true;
                 }
-            } else {
+            } else if (status != ConnStatus::UPGRADE) {
                 elp->ResetConnection(conn);
             }
         }
@@ -456,7 +456,7 @@ void *EventLoop::WebSocketWorkerThread(void *arg) {
                     elp->Modify(elp->evfd_, item->ws->Conn()->fd_, MEVENT_IN | MEVENT_OUT, item->ws->Conn());
                     item->ws->Conn()->ev_writable_ = true;
                 }
-            } else {
+            } else if (status != ConnStatus::UPGRADE) {
                 elp->ResetConnection(item->ws->Conn());
             }
         }

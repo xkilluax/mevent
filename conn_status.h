@@ -7,6 +7,7 @@ namespace mevent {
 
 enum class ConnStatus : uint8_t {
     AGAIN,
+    UPGRADE,
     END,
     ERROR,
     CLOSE

@@ -55,7 +55,7 @@ ConnStatus Connection::Flush() {
     }
     
     if (req_.status_ == RequestStatus::UPGRADE) {
-        return ConnStatus::AGAIN;
+        return ConnStatus::UPGRADE;
     }
     
     if (resp_.finish_) {
@@ -181,12 +181,14 @@ ssize_t Connection::Writen(const void *buf, size_t len) {
 
         if (nwrite > 0) {
             n += nwrite;
-        } else {
+        } else if (nwrite < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return n;
             } else {
                 return -1;
             }
+        } else {
+            return -1;
         }
     }
     
@@ -218,12 +220,14 @@ ssize_t Connection::Readn(void *buf, size_t len) {
 
         if (nread > 0) {
             n += nread;
-        } else {
+        } else if (nread < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return n;
             } else {
                 return -1;
             }
+        } else {
+            return -1;
         }
     }
     
