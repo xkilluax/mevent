@@ -263,9 +263,9 @@ void *EventLoop::CheckConnectionTimeout(void *arg) {
                 if (conn->active_time_ > 0) {
                     if ((now - conn->active_time_) >= elp->idle_timeout_) {
                         if (conn->Req()->status_ == RequestStatus::UPGRADE) {
-                            MEVENT_LOG_DEBUG("connection(websocket) timeout");
+                            MEVENT_LOG_DEBUG("client(websocket):%s timeout", conn->Req()->RemoteAddr().c_str());
                         } else {
-                            MEVENT_LOG_DEBUG("connection timeout");
+                            MEVENT_LOG_DEBUG("client:%s timeout", conn->Req()->RemoteAddr().c_str());
                         }
                         elp->ResetConnection(conn);
                     } else {
