@@ -176,7 +176,7 @@ ssize_t Connection::Writen(const void *buf, size_t len) {
                 }
             }
         } else {
-            nwrite = write(fd_, (char *)buf + n, len);
+            nwrite = write(fd_, (char *)buf + n, len - n);
         }
 
         if (nwrite > 0) {
@@ -215,7 +215,7 @@ ssize_t Connection::Readn(void *buf, size_t len) {
                 }
             }
         } else {
-            nread = read(fd_, (char *)buf + n, len);
+            nread = read(fd_, (char *)buf + n, len - n);
         }
 
         if (nread > 0) {

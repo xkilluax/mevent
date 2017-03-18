@@ -85,6 +85,8 @@ public:
     
     RequestMethod Method();
     
+    std::string RemoteAddr();
+    
 private:
     friend class Connection;
     friend class WebSocket;

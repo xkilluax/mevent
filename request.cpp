@@ -3,6 +3,8 @@
 #include "util.h"
 #include "event_loop.h"
 
+#include <arpa/inet.h>
+
 #include <string.h>
 
 namespace mevent {
@@ -215,6 +217,12 @@ std::string Request::QueryString() {
     
 RequestMethod Request::Method() {
     return method_;
+}
+    
+std::string Request::RemoteAddr() {
+    char buf[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &addr_, buf, INET_ADDRSTRLEN);
+    return std::string(buf);
 }
     
 void Request::ParseFormUrlencoded(std::map<std::string, std::string> &m, const std::string &str) {
@@ -495,6 +503,7 @@ HTTPParserStatus Request::Parse() {
                 parse_status_ = RequestParseStatus::S_EOH;
             } else if (c == 'c') {
                 if (rbuf_len_ - parse_offset_ < 9) {
+                    parse_offset_++;
                     continue;
                 }
                 

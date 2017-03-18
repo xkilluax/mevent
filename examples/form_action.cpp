@@ -30,14 +30,15 @@ const char *index_html =
 class FormAction {
 public:
     void Index(Connection *conn) {
-        conn->Resp()->SetHeader("Content-Type", "text/html");
-        conn->Resp()->WriteString(index_html);
+        Response *resp = conn->Resp();
+        resp->SetHeader("Content-Type", "text/html");
+        resp->WriteString(index_html);
     }
     
     void Action(Connection *conn) {
         Request *req = conn->Req();
         Response *resp = conn->Resp();
-        conn->Resp()->SetHeader("Content-Type", "text/plain");
+
         std::string str;
         if (req->Method() == RequestMethod::GET) {
             req->ParseQueryString();
@@ -53,6 +54,13 @@ public:
             str += "Last name:" + req->PostFormValue("lname") + "\n";
         }
         
+        str += "Content-Length:" + std::to_string(req->ContentLength()) + "\n";
+        str += "RemoteAddr:" + req->RemoteAddr() + "\n";
+        
+        req->ParseHeader();
+        str += "Content-Type:" + req->HeaderValue("Content-Type") + "\n";
+        
+        resp->SetHeader("Content-Type", "text/plain");
         resp->WriteString(str);
     }
 };
@@ -61,8 +69,8 @@ int main() {
     FormAction action;
     
     HTTPServer *server = new HTTPServer();
-    server->SetHandler("/", std::bind(&::FormAction::Index, &action, std::placeholders::_1));
-    server->SetHandler("/form_action", std::bind(&::FormAction::Action, &action, std::placeholders::_1));
+    server->SetHandler("/", std::bind(&FormAction::Index, &action, std::placeholders::_1));
+    server->SetHandler("/form_action", std::bind(&FormAction::Action, &action, std::placeholders::_1));
     
     server->SetWorkerThreads(4);
     server->SetIdleTimeout(60);
