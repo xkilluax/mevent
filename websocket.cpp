@@ -119,8 +119,8 @@ bool WebSocket::Upgrade()
     
     std::string sec_websocket_key = conn_->Req()->sec_websocket_key_;
 
-    conn_->Req()->Reset();
-    conn_->Resp()->Reset();
+//    conn_->Req()->Reset();
+//    conn_->Resp()->Reset();
     
     conn_->Req()->status_ = RequestStatus::UPGRADE;
     
@@ -138,14 +138,16 @@ ConnStatus WebSocket::ReadData() {
 
     ssize_t n = conn_->Readn(buf, READ_BUFFER_SIZE);
 
-    if (n < 0) {
-        return ConnStatus::CLOSE;
-    }
-
-    rbuf_.insert(rbuf_.end(), buf, buf + n);
-    if (!Parse()) {
-        return ConnStatus::ERROR;
-    }
+    do {
+        if (n < 0) {
+            return ConnStatus::CLOSE;
+        }
+        
+        rbuf_.insert(rbuf_.end(), buf, buf + n);
+        if (!Parse()) {
+            return ConnStatus::ERROR;
+        }
+    } while (n == READ_BUFFER_SIZE);
     
     return ConnStatus::AGAIN;
 }

@@ -313,25 +313,28 @@ ConnStatus Request::ReadData() {
     
     if (status_ == RequestStatus::HEADER_RECEIVING) {
         n = conn_->Readn(buf, READ_BUFFER_SIZE);
-        if (n > 0) {
-            rbuf_len_ += n;
-            if (rbuf_len_ > conn_->elp_->max_header_size_) {
-                error_code_ = 500;
-                return ConnStatus::ERROR;
+        do {
+            if (n > 0) {
+                rbuf_len_ += n;
+                if (rbuf_len_ > conn_->elp_->max_header_size_) {
+                    error_code_ = 500;
+                    return ConnStatus::ERROR;
+                }
+                
+                rbuf_.append(buf, n);
+                
+                HTTPParserStatus parse_status = Parse();
+                if (parse_status == HTTPParserStatus::FINISHED) {
+                    status_ = RequestStatus::BODY_RECEIVING;
+                    break;
+                } else if (parse_status == HTTPParserStatus::ERROR) {
+                    error_code_ = 400;
+                    return ConnStatus::ERROR;
+                }
+            } else if (n < 0) {
+                return ConnStatus::CLOSE;
             }
-            
-            rbuf_.append(buf, n);
-            
-            HTTPParserStatus parse_status = Parse();
-            if (parse_status == HTTPParserStatus::FINISHED) {
-                status_ = RequestStatus::BODY_RECEIVING;
-            } else if (parse_status == HTTPParserStatus::ERROR) {
-                error_code_ = 400;
-                return ConnStatus::ERROR;
-            }
-        } else if (n < 0) {
-            return ConnStatus::CLOSE;
-        }
+        } while (n == READ_BUFFER_SIZE);
     }
     
     if (status_ == RequestStatus::BODY_RECEIVING) {
@@ -344,16 +347,19 @@ ConnStatus Request::ReadData() {
             status_ = RequestStatus::BODY_RECEIVED;
         } else {
             n = conn_->Readn(buf, READ_BUFFER_SIZE);
-            if (n > 0) {
-                rbuf_len_ += n;
-                rbuf_.append(buf, n);
-                
-                if (rbuf_len_ - header_len_ >= content_length_) {
-                    status_ = RequestStatus::BODY_RECEIVED;
+            do {
+                if (n > 0) {
+                    rbuf_len_ += n;
+                    rbuf_.append(buf, n);
+                    
+                    if (rbuf_len_ - header_len_ >= content_length_) {
+                        status_ = RequestStatus::BODY_RECEIVED;
+                        break;
+                    }
+                } else if (n < 0) {
+                    return ConnStatus::CLOSE;
                 }
-            } else if (n < 0) {
-                return ConnStatus::CLOSE;
-            }
+            } while (n == READ_BUFFER_SIZE);
         }
     }
     
