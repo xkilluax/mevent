@@ -158,7 +158,7 @@ void EventLoop::Accept() {
     socklen_t clilen = sizeof(cliaddr);
     
     for (;;) {
-        int clifd = accept(listen_fd_, (struct sockaddr *) &cliaddr, &clilen);
+        int clifd = accept(listen_fd_, (struct sockaddr *)&cliaddr, &clilen);
         
         if (clifd < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
