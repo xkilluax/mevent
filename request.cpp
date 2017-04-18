@@ -305,15 +305,15 @@ void Request::Keepalive()
     
 ConnStatus Request::ReadData() {
     char buf[READ_BUFFER_SIZE];
-    ssize_t n;
+    ssize_t n = 0;
     
     if (status_ != RequestStatus::HEADER_RECEIVING && status_ != RequestStatus::BODY_RECEIVING) {
         return ConnStatus::ERROR;
     }
     
     if (status_ == RequestStatus::HEADER_RECEIVING) {
-        n = conn_->Readn(buf, READ_BUFFER_SIZE);
         do {
+            n = conn_->Readn(buf, READ_BUFFER_SIZE);
             if (n > 0) {
                 rbuf_len_ += n;
                 if (rbuf_len_ > conn_->elp_->max_header_size_) {
@@ -333,6 +333,8 @@ ConnStatus Request::ReadData() {
                 }
             } else if (n < 0) {
                 return ConnStatus::CLOSE;
+            } else {
+                break;
             }
         } while (n == READ_BUFFER_SIZE);
     }
@@ -346,8 +348,8 @@ ConnStatus Request::ReadData() {
         if (rbuf_len_ - header_len_ >= content_length_) {
             status_ = RequestStatus::BODY_RECEIVED;
         } else {
-            n = conn_->Readn(buf, READ_BUFFER_SIZE);
             do {
+                n = conn_->Readn(buf, READ_BUFFER_SIZE);
                 if (n > 0) {
                     rbuf_len_ += n;
                     rbuf_.append(buf, n);
@@ -358,6 +360,8 @@ ConnStatus Request::ReadData() {
                     }
                 } else if (n < 0) {
                     return ConnStatus::CLOSE;
+                } else {
+                    break;
                 }
             } while (n == READ_BUFFER_SIZE);
         }

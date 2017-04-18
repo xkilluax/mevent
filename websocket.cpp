@@ -135,17 +135,19 @@ bool WebSocket::Upgrade()
     
 ConnStatus WebSocket::ReadData() {
     char buf[READ_BUFFER_SIZE];
-
-    ssize_t n = conn_->Readn(buf, READ_BUFFER_SIZE);
-
+    ssize_t n = 0;
+    
     do {
-        if (n < 0) {
+        n = conn_->Readn(buf, READ_BUFFER_SIZE);
+        if (n > 0) {
+            rbuf_.insert(rbuf_.end(), buf, buf + n);
+            if (!Parse()) {
+                return ConnStatus::ERROR;
+            }
+        } else if (n < 0) {
             return ConnStatus::CLOSE;
-        }
-        
-        rbuf_.insert(rbuf_.end(), buf, buf + n);
-        if (!Parse()) {
-            return ConnStatus::ERROR;
+        } else {
+            break;
         }
     } while (n == READ_BUFFER_SIZE);
     
